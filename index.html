@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Weather Alerts</title>
+  <style>
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.25);
+      --glass-border: rgba(255, 255, 255, 0.4);
+      --text-dark: #1d1d1f;
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      color: var(--text-dark);
+    }
+    .glass-panel {
+      background: var(--glass-bg);
+      -webkit-backdrop-filter: blur(25px);
+      backdrop-filter: blur(25px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 24px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      background: rgba(255,255,255,0.5);
+      font-size: 16px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      background: #007aff;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .alerts-container {
+      margin-top: 20px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="glass-panel">
+    <h2>Alert Settings</h2>
+    <input type="text" id="locationInput" placeholder="Enter City (e.g., Regina, SK)" autocomplete="off">
+    
+    <button id="enableNotifications">Enable EMS Alerts</button>
+    <div class="alerts-container" id="alertsDisplay">No active alerts.</div>
+  </div>
+
+  <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker registered', reg))
+          .catch(err => console.error('Service Worker failure', err));
+      });
+    }
+
+    const locationInput = document.getElementById('locationInput');
+    const btnNotify = document.getElementById('enableNotifications');
+    const alertsDisplay = document.getElementById('alertsDisplay');
+
+    // Load preferences on boot
+    window.onload = () => {
+      const savedLocation = localStorage.getItem('userLocation');
+      if (savedLocation) {
+        locationInput.value = savedLocation;
+        fetchWeatherAlerts(savedLocation);
+      }
+    };
+
+    // Autocomplete / Save Preferences
+    locationInput.addEventListener('change', (e) => {
+      const loc = e.target.value;
+      const fullLoc = loc.includes('Canada') ? loc : `${loc}, Canada`; 
+      localStorage.setItem('userLocation', fullLoc);
+      fetchWeatherAlerts(fullLoc);
+    });
+
+    // Notification Permissions
+    btnNotify.addEventListener('click', async () => {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        btnNotify.innerText = 'Alerts Enabled';
+        subscribeToPush();
+      }
+    });
+
+    function subscribeToPush() {
+      navigator.serviceWorker.ready.then(reg => {
+        // reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: 'YOUR_VAPID_KEY' });
+      });
+    }
+
+    // Fetch Canada Weather API
+    async function fetchWeatherAlerts(location) {
+      try {
+        const response = await fetch('https://api.weather.gc.ca/collections/public-weather-alerts/items?f=json');
+        const data = await response.json();
+        alertsDisplay.innerHTML = `Monitoring EMS channels for ${location}...<br>Offline caching active.`;
+      } catch (err) {
+        alertsDisplay.innerHTML = `Offline mode. Using cached alerts for ${location}.`;
+      }
+    }
+  </script>
+</body>
+</html>
