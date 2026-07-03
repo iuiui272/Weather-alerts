@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Weather Alerts</title>
+  <title>Weather</title>
+  
+  <!-- Material Symbols Outlined -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
   <style>
     :root {
       --bg-dark: #121214;
@@ -38,14 +42,16 @@
       font-size: 34px;
       font-weight: 700;
     }
-    .menu-btn {
+    .icon-btn {
       background: rgba(255, 255, 255, 0.15);
       border: none;
       color: white;
       border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      font-size: 20px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
     }
 
@@ -88,11 +94,21 @@
     }
     .card-left { display: flex; flex-direction: column; justify-content: space-between; }
     .card-right { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; }
-    .city-name { font-size: 24px; font-weight: 600; margin: 0; }
+    .city-name { font-size: 24px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;}
     .time { font-size: 13px; font-weight: 500; opacity: 0.9; margin-top: 2px; }
     .warning { font-size: 12px; font-weight: 500; margin-top: 18px; color: #ffcc00; }
     .temp { font-size: 48px; font-weight: 300; margin: -5px 0 0 0; }
     .high-low { font-size: 13px; font-weight: 500; opacity: 0.9; margin-bottom: 2px;}
+    
+    .delete-btn {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      padding: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
 
     /* Search Bar */
     .search-container {
@@ -100,18 +116,25 @@
       background: var(--glass-bg);
       -webkit-backdrop-filter: blur(30px);
       backdrop-filter: blur(30px);
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
-    .search-input-wrapper { position: relative; }
+    .search-input-wrapper { 
+      position: relative; 
+      flex: 1;
+    }
     .search-icon {
       position: absolute;
       left: 12px;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 16px;
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.6);
     }
     input[type="text"] {
       width: 100%;
-      padding: 10px 15px 10px 38px;
+      padding: 10px 15px 10px 40px;
       border-radius: 12px;
       border: none;
       background: rgba(255, 255, 255, 0.15);
@@ -119,6 +142,16 @@
       font-size: 16px;
       outline: none;
       box-sizing: border-box;
+    }
+    
+    .add-btn {
+      background: none;
+      border: none;
+      color: #0a84ff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 0;
     }
 
     /* Settings Overlay */
@@ -144,7 +177,6 @@
       margin-bottom: 30px;
     }
     .settings-header h2 { margin: 0; font-size: 28px; }
-    .close-btn { background: none; border: none; color: #0a84ff; font-size: 18px; font-weight: 600; cursor: pointer; }
     
     .settings-content {
       flex: 1;
@@ -168,7 +200,7 @@
     }
 
     .test-btn {
-      margin-top: auto; /* Pushes button to the absolute bottom */
+      margin-top: auto;
       background: rgba(255,255,255,0.1);
       color: #0a84ff;
       border: none;
@@ -177,6 +209,10 @@
       font-size: 18px;
       font-weight: 600;
       cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
     }
   </style>
 </head>
@@ -185,32 +221,36 @@
   <!-- Main View -->
   <div class="header">
     <h1>Weather</h1>
-    <button class="menu-btn" id="openSettings">⋯</button>
+    <button class="icon-btn" id="openSettings">
+      <span class="material-symbols-outlined">settings</span>
+    </button>
   </div>
 
   <div class="locations-container" id="locationsList"></div>
 
   <div class="search-container">
     <div class="search-input-wrapper">
-      <span class="search-icon">🔍</span>
-      <!-- Autofill list attached -->
-      <input type="text" id="addLocationInput" list="canadian-cities" placeholder="Search for a city or airport" autocomplete="off">
-      <datalist id="canadian-cities">
-        <option value="Regina, SK">
-        <option value="Saskatoon, SK">
-        <option value="Unity, SK">
-        <option value="Hillsdale No. 440, SK">
-        <option value="Calgary, AB">
-        <option value="Toronto, ON">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input type="text" id="addLocationInput" list="locations-list" placeholder="Search for a city, country..." autocomplete="off">
+      <datalist id="locations-list">
+        <option value="Regina, SK, Canada">
+        <option value="Saskatoon, SK, Canada">
+        <option value="Unity, SK, Canada">
+        <option value="Hillsdale No. 440, SK, Canada">
       </datalist>
     </div>
+    <button class="add-btn" id="addBtn">
+      <span class="material-symbols-outlined" style="font-size: 32px;">add_circle</span>
+    </button>
   </div>
 
   <!-- Settings View -->
   <div class="settings-overlay" id="settingsView">
     <div class="settings-header">
       <h2>Alert Settings</h2>
-      <button class="close-btn" id="closeSettings">Done</button>
+      <button class="icon-btn" id="closeSettings" style="background: none; color: #0a84ff;">
+        <span class="material-symbols-outlined">close</span>
+      </button>
     </div>
     
     <div class="settings-content">
@@ -233,8 +273,10 @@
         <input type="checkbox" id="pref-ems" checked>
       </div>
 
-      <!-- Placed at the very bottom -->
-      <button class="test-btn" id="pushTestBtn">Test Push API</button>
+      <button class="test-btn" id="pushTestBtn">
+        <span class="material-symbols-outlined">notifications</span>
+        Test Push API (5s Delay)
+      </button>
     </div>
   </div>
 
@@ -249,6 +291,7 @@
     const addLocationInput = document.getElementById('addLocationInput');
     const settingsView = document.getElementById('settingsView');
     const pushTestBtn = document.getElementById('pushTestBtn');
+    const addBtn = document.getElementById('addBtn');
 
     // 3. UI Toggles
     document.getElementById('openSettings').onclick = () => settingsView.classList.add('active');
@@ -259,12 +302,12 @@
 
     // 4. State Management
     let savedPlaces = JSON.parse(localStorage.getItem('weatherPlaces')) || [
-      { city: "Regina", time: "6:54 PM", temp: "20°", condition: "⚠️ Yellow Warning - Severe Thunderstorm", hl: "H:22° L:11°" }
+      { city: "Regina", time: "6:54 PM", temp: "20°", condition: "⚠️ Yellow Warning", hl: "H:22° L:11°" }
     ];
 
     function renderLocations() {
       locationsList.innerHTML = '';
-      savedPlaces.forEach((place) => {
+      savedPlaces.forEach((place, index) => {
         locationsList.innerHTML += `
           <div class="location-card">
             <div class="card-content">
@@ -277,50 +320,49 @@
               </div>
               <div class="card-right">
                 <div class="temp">${place.temp}</div>
-                <div class="high-low">${place.hl}</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div class="high-low">${place.hl}</div>
+                  <button class="delete-btn" onclick="removePlace(${index})">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>`;
       });
     }
 
-    // 5. Add Location & Fetch Data
-    addLocationInput.addEventListener('keypress', async (e) => {
-      if (e.key === 'Enter' && e.target.value.trim() !== '') {
-        const newCity = e.target.value.split(',')[0].trim(); // Formats "City, PROV" to "City"
-        
-        // Push local object immediately for offline capability
+    window.removePlace = function(index) {
+      savedPlaces.splice(index, 1);
+      localStorage.setItem('weatherPlaces', JSON.stringify(savedPlaces));
+      renderLocations();
+    }
+
+    // 5. Add Location (Now keeps the full string)
+    function addNewLocation() {
+      const newLoc = addLocationInput.value.trim(); 
+      if (newLoc !== '') {
         const newPlace = {
-          city: newCity,
+          city: newLoc, 
           time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
           temp: "--°", 
-          condition: "Checking ECCC alerts...",
+          condition: "Checking alerts...",
           hl: "H:--° L:--°"
         };
         
         savedPlaces.push(newPlace);
         localStorage.setItem('weatherPlaces', JSON.stringify(savedPlaces));
         renderLocations();
-        e.target.value = ''; 
-        
-        // Attempt ECCC API Fetch (Background)
-        fetchECCCData(newCity);
-      }
-    });
-
-    async function fetchECCCData(city) {
-      try {
-        // Direct call to Environment Canada Open API
-        const res = await fetch('https://api.weather.gc.ca/collections/weather-alerts/items?lang=en');
-        const data = await res.json();
-        console.log(`Live alerts fetched for ${city}`, data);
-        // Logic to parse GeoJSON features against the city would go here.
-      } catch (err) {
-        console.log('Offline: ECCC API unreachable. Service worker handling cache.');
+        addLocationInput.value = ''; 
       }
     }
 
-    // 6. Settings & Push API Test
+    addLocationInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') addNewLocation();
+    });
+    addBtn.addEventListener('click', addNewLocation);
+
+    // 6. Settings & Push API Test (Timer Added)
     function savePreferences() {
       const prefs = {
         thunder: document.getElementById('pref-thunder').checked,
@@ -338,18 +380,23 @@
       }
 
       if (permission === 'granted') {
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification('System Test', {
-            body: 'Web Push API is active. You will receive offline EMS and Weather alerts based on your settings.',
-            vibrate: [200, 100, 200]
+        alert("Push test initiated. Close the app or go to your home screen now. Notification will appear in 5 seconds.");
+        
+        // Timer delays the push so you can exit the app
+        setTimeout(() => {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification('System Test', {
+              body: 'Web Push API is active. Alerts are working in the background.',
+              icon: '/icon.png',
+              vibrate: [200, 100, 200]
+            });
           });
-        });
+        }, 5000);
       } else {
-        alert("Please enable notifications in your browser/iOS settings to test.");
+        alert("Please enable notifications to test.");
       }
     });
 
-    // Boot
     renderLocations();
   </script>
 </body>
