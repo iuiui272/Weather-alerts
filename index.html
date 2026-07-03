@@ -281,123 +281,93 @@
   </div>
 
   <script>
-    // 1. Service Worker 
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
-    }
+// 1. Initial State & Load from LocalStorage
+let savedPlaces = JSON.parse(localStorage.getItem('weatherPlaces')) || [
+  { city: "Regina, SK", time: "12:00 PM", temp: "22°", condition: "Clear", hl: "H:25° L:10°" }
+];
 
-    // 2. Elements
-    const locationsList = document.getElementById('locationsList');
-    const addLocationInput = document.getElementById('addLocationInput');
-    const settingsView = document.getElementById('settingsView');
-    const pushTestBtn = document.getElementById('pushTestBtn');
-    const addBtn = document.getElementById('addBtn');
+const locationsList = document.getElementById('locationsList');
+const addLocationInput = document.getElementById('addLocationInput');
+const addBtn = document.getElementById('addBtn');
 
-    // 3. UI Toggles
-    document.getElementById('openSettings').onclick = () => settingsView.classList.add('active');
-    document.getElementById('closeSettings').onclick = () => {
-      settingsView.classList.remove('active');
-      savePreferences();
-    };
-
-    // 4. State Management
-    let savedPlaces = JSON.parse(localStorage.getItem('weatherPlaces')) || [
-      { city: "Regina", time: "6:54 PM", temp: "20°", condition: "⚠️ Yellow Warning", hl: "H:22° L:11°" }
-    ];
-
-    function renderLocations() {
-      locationsList.innerHTML = '';
-      savedPlaces.forEach((place, index) => {
-        locationsList.innerHTML += `
-          <div class="location-card">
-            <div class="card-content">
-              <div class="card-left">
-                <div>
-                  <h2 class="city-name">${place.city}</h2>
-                  <div class="time">${place.time}</div>
-                </div>
-                <div class="warning">${place.condition}</div>
-              </div>
-              <div class="card-right">
-                <div class="temp">${place.temp}</div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <div class="high-low">${place.hl}</div>
-                  <button class="delete-btn" onclick="removePlace(${index})">
-                    <span class="material-symbols-outlined">delete</span>
-                  </button>
-                </div>
-              </div>
+// 2. Render Function
+function renderLocations() {
+  locationsList.innerHTML = '';
+  savedPlaces.forEach((place, index) => {
+    locationsList.innerHTML += `
+      <div class="location-card">
+        <div class="card-content">
+          <div class="card-left">
+            <div>
+              <h2 class="city-name">${place.city}</h2>
+              <div class="time">${place.time}</div>
             </div>
-          </div>`;
-      });
-    }
+            <div class="warning">${place.condition}</div>
+          </div>
+          <div class="card-right">
+            <div class="temp">${place.temp}</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="high-low">${place.hl}</div>
+              <button class="delete-btn" onclick="removePlace(${index})">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  });
+}
 
-    window.removePlace = function(index) {
-      savedPlaces.splice(index, 1);
-      localStorage.setItem('weatherPlaces', JSON.stringify(savedPlaces));
-      renderLocations();
-    }
+// 3. Delete Function
+window.removePlace = function(index) {
+  savedPlaces.splice(index, 1);
+  localStorage.setItem('weatherPlaces', JSON.stringify(savedPlaces));
+  renderLocations();
+};
 
-    // 5. Add Location (Now keeps the full string)
-    function addNewLocation() {
-      const newLoc = addLocationInput.value.trim(); 
-      if (newLoc !== '') {
-        const newPlace = {
-          city: newLoc, 
-          time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-          temp: "--°", 
-          condition: "Checking alerts...",
-          hl: "H:--° L:--°"
-        };
-        
-        savedPlaces.push(newPlace);
-        localStorage.setItem('weatherPlaces', JSON.stringify(savedPlaces));
-        renderLocations();
-        addLocationInput.value = ''; 
-      }
-    }
-
-    addLocationInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') addNewLocation();
-    });
-    addBtn.addEventListener('click', addNewLocation);
-
-    // 6. Settings & Push API Test (Timer Added)
-    function savePreferences() {
-      const prefs = {
-        thunder: document.getElementById('pref-thunder').checked,
-        tornado: document.getElementById('pref-tornado').checked,
-        heat: document.getElementById('pref-heat').checked,
-        ems: document.getElementById('pref-ems').checked,
-      };
-      localStorage.setItem('weatherPrefs', JSON.stringify(prefs));
-    }
-
-    pushTestBtn.addEventListener('click', async () => {
-      let permission = Notification.permission;
-      if (permission === 'default') {
-        permission = await Notification.requestPermission();
-      }
-
-      if (permission === 'granted') {
-        alert("Push test initiated. Close the app or go to your home screen now. Notification will appear in 5 seconds.");
-        
-        // Timer delays the push so you can exit the app
-        setTimeout(() => {
-          navigator.serviceWorker.ready.then(reg => {
-            reg.showNotification('System Test', {
-              body: 'Web Push API is active. Alerts are working in the background.',
-              icon: '/icon.png',
-              vibrate: [200, 100, 200]
-            });
-          });
-        }, 5000);
-      } else {
-        alert("Please enable notifications to test.");
-      }
-    });
-
+// 4. Force Add & Save Function
+window.addNewLocation = function() {
+  const newLoc = addLocationInput.value.trim(); 
+  
+  if (newLoc !== '') {
+    const newPlace = {
+      city: newLoc, 
+      time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      temp: "--°", 
+      condition: "Fetching data...",
+      hl: "H:--° L:--°"
+    };
+    
+    // Push to array and force save to storage
+    savedPlaces.push(newPlace);
+    localStorage.setItem('weatherPlaces', JSON.stringify(savedPlaces));
+    
+    // Update UI and clear input
     renderLocations();
+    addLocationInput.value = ''; 
+  } else {
+    alert("Please enter a valid city name.");
+  }
+};
+
+// 5. Event Listeners for Adding
+addBtn.onclick = addNewLocation;
+
+addLocationInput.addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addNewLocation();
+  }
+});
+
+// 6. Settings Overlay Logic
+const settingsView = document.getElementById('settingsView');
+document.getElementById('openSettings').onclick = () => settingsView.classList.add('active');
+document.getElementById('closeSettings').onclick = () => settingsView.classList.remove('active');
+
+// Initialize the view
+renderLocations();
+
   </script>
 </body>
 </html>
